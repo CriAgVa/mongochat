@@ -1,0 +1,11 @@
+café: individualidad - reflexividad
+naranja: entusiasmo
+rojo: pasión
+amarillo: felicidad
+verde: relajación
+azul: tristeza
+morado: aleatoridad
+negro: poder
+blanco: paz 
+gris: alienacion - angustia - nostalgia
+rosa: frenesí

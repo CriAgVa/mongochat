@@ -1,0 +1,8 @@
+extends layout 
+block content
+    h1 #{title}
+    form(action="/files/" method="POST" enctype="multipart/form-data")
+        input(type="file" name="upload" multiple)
+        input(type="submit" value="Upload")
+    block scripts
+        script(src='/javascripts/angular/A_chat.js') 

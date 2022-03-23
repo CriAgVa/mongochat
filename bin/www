@@ -1,0 +1,278 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('mongochat:server');
+var http = require('http');
+
+const mongoose = require('mongoose');
+const Chat = require('../modelos/M_Chat.js');
+
+var formidable = require("formidable");
+var fs = require("fs");
+
+var nChat = mongoose.model("M_Chat");
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+
+//socket.io
+var {Server} = require('socket.io');
+var io = new Server(server);
+
+  io.on('connection', function(socket){
+    var sala = socket.handshake.query.num;
+    
+    //console.log(socket.handshake.query.num)
+          //create function to send status
+          var sendStatus = function(status){
+            socket.emit('status', status);
+          }
+
+          //get chats from mongo collection
+          Chat.find({sala:sala}).sort({_id:1}).then(function(res, err){
+            //emit the messages
+            socket.emit('output', res);
+          }).catch((err) => {
+            console.log("an error has occurred...")
+            throw err});
+          //handle input events
+          socket.on('input', function(data){
+            let name = data.nombre;
+            let message = data.mensaje;
+            let day = data.dia;
+            let mes = data.mes;
+            let year = data.year;
+            let hora = data.hora;
+            let minuto = data.minuto;
+            let segundo = data.segundo;
+            let sala = data.sala;
+            var chat = new nChat({
+              nombre: name,
+              mensaje: message,
+              fecha:{
+                dia: day,
+                mes: mes,
+                year: year,
+                hora: {
+                  hora: hora,
+                  minuto: minuto,
+                  segundo: segundo
+                }
+              },
+              sala: sala
+            });
+
+            //chek for name and message
+            if(name == '' || message == ''){
+              //send error status
+              sendStatus('please enter a name and message');
+            }else{
+              // insert message into db
+              chat.save(function(err, res){
+                  io.emit('output', [chat]);
+
+                  // send status object
+                  sendStatus({
+                  message: 'Message sent',
+                  clear: true
+                  });
+              });
+            }
+          });
+
+          //Handle clear
+          socket.on('clear', function(data){
+            //remove all chats from collection
+            Chat.collection.drop(function(){
+              //emit cleared
+              socket.emit('cleared');
+            });
+          });
+
+          socket.on('file-meta', function(data){
+            socket.in(data.uid).emit("fs-meta",data.metadata);
+          })
+          socket.on('file-start', function(data){
+            socket.in(data.uid).emit("fs-share",{});
+          })
+          socket.on('file-raw', function(data){
+            socket.in(data.uid).emit("fs-share",data.buffer);
+          })
+          /*
+          //Handle "Start"
+          socket.on('Start', function (data){
+            var Name = data['Name'];
+            Files[Name] = {
+              FileSize : data['Size'],
+              Data     : "",
+              Downloaded : 0
+            }
+            var Place = 0;
+            try{
+              var Stat = fs.statSync('Temp/'+Name);
+              if(Stat.isFile()){
+                Files[Name]['Downloaded'] = Stat.size;
+                Place = Stat.size / 524288;
+              }
+            }
+            catch(err){}
+            fs.open("Temp/"+Name, "a", 0755, function(err, fd){
+              if(err){
+                console.log(err)
+              }else{
+                Files[Name]['Handler'] = fd;
+                socket.emit('MoreData', {"Place": Place, Percent : 0})
+              }
+            });
+          });
+
+          //Handle Upload
+          socket.on('Upload', function(data){
+            var Name = data['Name'];
+            Files[Name]['Downloaded'] += data['Data'].length;
+            Files[Name]['Data'] += data['Data'];
+            if(Files[Name]['Downloaded'] == Files[Name]['FileSize']){
+              fs.write(Files[Name]['Handler'], Files[Name]['Data'], null, 'Binary', function(err, Writen){
+
+              });
+            }else if(Files[Name]['Data'].length > 10485760){
+              fs.write(Files[Name]['Handler'], Files[Name]['Data'], null, 'Binary', function(err, Writen){
+                Files[Name]['Data'] = "";
+                var Place = Files[Name]['Downloaded']/524288;
+                var Percent = (Files[Name]['Downloaded']/Files[Name]['FileSize']) * 100;
+                socket.emit('MoreData', {'Place':Place, 'Percent':Percent});
+              });
+            }else{
+              var Place = Files[Name]['Downloaded']/524288;
+              var Percent = (Files[Name]['Downloaded']/Files[Name]['FileSize'])*100;
+              socket.emit('MoreData', {"Place":Place, 'Percent':Percent});
+            }
+          });
+
+          //Handle MoreData
+          socket.on('MoreData', function(data){
+            UpdateBar(data['Percent']);
+            var Place = data['Place'] * 524288;
+            var NewFile;
+            if(SelectedFile.webkitSlice){
+              NewFile = SelectedFile.webkitSlice(Place, Place + Math.min(524288, (SelectedFile.size-Place)));
+            }else{
+              NewFile = SelectedFile.mozSlice(Place, Place + Math.min(524288, (SelectedFile.size-Place)));
+              FReader.readAsBinaryString(NewFile);
+            }
+          });
+          function UpdateBar(percent){
+            document.getElementById('ProgressBar').style.width = percent + '%';
+            document.getElementById('percent').innerHTML = (Math.round(percent*100)/100) + '%';
+            var MBDone = Math.round(((percent/100.0) * SelectedFile.size) / 1048576);
+            document.getElementById('MB').innerHTML = MBDone;
+        }
+        var inp = fs.createReadStream("Temp/" + Name);
+        var out = fs.createWriteStream("Video/" + Name);
+        util.pump(inp, out, function(){
+            fs.unlink("Temp/" + Name, function () { //This Deletes The Temporary File
+                //Moving File Completed
+            });
+        });
+        exec("ffmpeg -i Video/" + Name  + " -ss 01:30 -r 1 -an -vframes 1 -f mjpeg Video/" + Name  + ".jpg", function(err){
+          socket.emit('Done', {'Image' : 'Video/' + Name + '.jpg'});
+        });
+
+
+        var Path = "http://localhost/";
+ 
+socket.on('Done', function (data){
+    var Content = "Video Successfully Uploaded !!"
+    Content += "<img id='Thumb' src='" + Path + data['Image'] + "' alt='" + Name + "'><br>";
+    Content += "<button  type='button' name='Upload' value='' id='Restart' class='Button'>Upload Another</button>";
+    document.getElementById('UploadArea').innerHTML = Content;
+    document.getElementById('Restart').addEventListener('click', Refresh);
+});
+function Refresh(){
+    location.reload(true);
+}
+*/
+        });
+
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
