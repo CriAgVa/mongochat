@@ -18,6 +18,9 @@ var fileB = element('FileBox');
 var dataN = element('NameBox'); 
 
 var datos = element('datos');
+
+var form = element('upldButton');
+var upld = element('upldFile');
     
     //set default status 
     var statusDefault = Mstatus.textContent;
@@ -31,35 +34,6 @@ var datos = element('datos');
             }, 4000);
         }
     }
-/*
-uploadB.addEventListener('click', StartUpload);
-fileB.addEventListener('change', FileChosen);
-var SelectedFile;
-function FileChosen(evnt){
-    SelectedFile = evnt.target.files[0];
-    dataN.value = SelectedFile.name;
-}
-
-var FReader;
-var Name;
-function StartUpload(){
-    if(fileB.value != ""){
-        FReader = new FileReader();
-        Name = dataN.value;
-        var Content = "<span id='NameArea'>Uploading " + SelectedFile.name + " as " + Name + "</span>";
-        Content += '<div id="ProgressContainer"><div id="ProgressBar"></div></div><span id="percent">0%</span>';
-        Content += "<span id='Uploaded'> - <span id='MB'>0</span>/" + Math.round(SelectedFile.size / 1048576) + "MB</span>";
-        document.getElementById('UploadArea').innerHTML = Content;
-        FReader.onload = function(evnt){
-            socket.emit('Upload', {'Name': Name, Data: evnt.target.result});
-        }
-        socket.emit('Start', {'Name':Name, 'Size':SelectedFile.size});
-    }
-}function selectFile(e){
-    setFile(e.target.files[0]);
-}
-*/
-
 
 //connect to socket.io
 var socket = io.connect('http://localhost:3000', {query: 'num='+datos.value});
@@ -71,13 +45,43 @@ if (socket != undefined){
     
     // Hande output
     socket.on('output', function(data){
+        console.log(data)
         data.forEach(element => {
             if (element.sala == datos.value){
+                var mensaje = element.mensaje;
+
                 var message = document.createElement('div');
                 message.setAttribute('class', 'chat-message');
 
                 var text = document.createElement('div');
-                text.setAttribute('class', 'chat-text');
+                if(element.tipo == "msj"){
+                    text.setAttribute('class', 'chat-text');
+                    text.textContent = element.mensaje;
+                }else{
+                    text.setAttribute('class', 'chat-file');
+                    var icon = document.createElement('i');
+                    var text_content = document.createElement('div');
+
+                    if(element.tipo.includes("image")){
+                        icon.className = "fa-solid fa-file-image c-icon";       
+                    }else if (element.tipo.includes("text")){
+                        icon.className = "fa-solid fa-note-sticky c-icon";
+                    }else if (element.tipo.includes("audio")){
+                        icon.className = "fa-solid fa-file-audio c-icon";
+                    }else if (element.tipo.includes("video")){
+                        icon.className = "fa-solid fa-file-video c-icon";
+                    }else{
+                        icon.className = "fa-regular fa-file c-icon";
+                    }
+                    text.appendChild(icon);
+                        text_content.className = "c-file";
+                        text_content.textContent = element.mensaje;
+                        text.appendChild(text_content);
+                        text.insertBefore(icon, text_content);
+                    text.addEventListener('click', () => {
+                        window.location.href = "http://localhost:3000/files/download/"+mensaje;
+                    });
+                }
 
                 var time = document.createElement('div');
                 time.setAttribute('class', 'chat-time');
@@ -118,7 +122,7 @@ if (socket != undefined){
                         minuto = '09';
                         break;
                     }
-                text.textContent = element.mensaje;
+                
                 time.textContent = element.fecha.hora.hora+":"+minuto;
                 name.textContent = element.nombre;
                 
@@ -147,6 +151,32 @@ if (socket != undefined){
         }
     });
 
+    // Handle Upload
+    form.addEventListener('click', function(){
+        var nombreArchivo;
+        var tipoArchivo;
+        var aux = upld.files;
+        
+        nombreArchivo = aux[0].name;
+        tipoArchivo = aux[0].type;
+
+        console.log(nombreArchivo)
+
+        socket.emit('input', {
+            nombre: username.value,
+            mensaje: nombreArchivo,
+            dia: date.getDate(),
+            mes: date.getMonth() + 1,
+            year: date.getFullYear(),
+            hora: date.getHours(),
+            minuto: date.getMinutes(),
+            segundo: date.getSeconds(),
+            sala: datos.value,
+            tipo: tipoArchivo
+        });
+    });
+
+
     // Hande input 
     
     textarea.addEventListener('keydown', function(){
@@ -161,7 +191,8 @@ if (socket != undefined){
                 hora: date.getHours(),
                 minuto: date.getMinutes(),
                 segundo: date.getSeconds(),
-                sala: datos.value
+                sala: datos.value,
+                tipo: "msj"
             });
             event.preventDefault();
         }

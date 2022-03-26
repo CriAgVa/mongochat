@@ -40,7 +40,7 @@ router.post('/', function(req, res){
    //parse function 
    form.parse(req, (err, fields, files) => {
      var mFile = {
-      nombreOriginal  : files.upload.originalFilename,
+      nombreOriginal  : ObjectId(files.upload.originalFilename),
       nombreNuevo     : files.upload.newFilename,
       tipo            : files.upload.mimetype
      }
@@ -71,29 +71,42 @@ router.post('/msg', function(req, res){
    
     //parse function 
     form.parse(req, (err, fields, files) => {
+        if(files.upload.mimetype.includes("application")){
+            files.upload.mimetype = "app"
+        }
       var mFile = {
        nombreOriginal  : files.upload.originalFilename,
        nombreNuevo     : files.upload.newFilename,
        tipo            : files.upload.mimetype
       }
-
-      /*
-var mChat = {
-
-      }var msj = new Chat(  )
-      */
-      
    
       var archivo = new Archivo( mFile );
           archivo.save(function(err, rslt){
               if(err === null){
-                  res.json(rslt);
-                  
+                  console.log("exito")
+                  res.redirect(req.get('referer'))
               }else{
                   res.json({status:false, error:err});
               }
           });
        
     });
+});
+
+/**
+ * 
+
+ * 
+ */
+router.get('/download/:id', function(req, res){
+    Archivo.findOne({nombreOriginal : req.params.id},
+        function(err, reslt){
+            var file = 'E://Capacitacionnode//Capacitacion//mongochat//uploads//'+reslt.nombreNuevo;
+            
+            res.download(file)
+            
+            
+        });
+    
 });
 module.exports = router;

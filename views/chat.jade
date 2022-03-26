@@ -17,8 +17,9 @@ block content
                 button.btn.btn-primary(ng-click="envioArchivo()") Adjuntar Archivo
                 div(ng-show="envio")
                     form(action="/files/msg" method="POST" enctype="multipart/form-data")
-                        input(type="file" name="upload" multiple)
-                        input(type="submit" value="Upload")
+                        input(type="file" name="upload" id="upldFile")
+                        //input(type="submit" value="Upload" id="updtButton")
+                        input(type="submit" value="Upload" id="upldButton")
     block scripts    
         script(src='https://cdn.socket.io/4.4.1/socket.io.min.js' integrity='sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H' crossorigin='anonymous')
         script(src="/socket.io/socket.io.js")

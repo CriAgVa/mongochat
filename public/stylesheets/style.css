@@ -45,3 +45,19 @@ a {
   border-color: #909497;
   border-radius: 0%;
 }
+
+.chat-file{
+  padding-top: 4px;
+  padding-bottom: 2px;
+  padding-left: 15px;
+  font-size: 12px;
+}
+
+.c-icon{
+  display: inline-block;
+}
+
+.c-file{
+  display: inline-block;
+  margin: 4px
+}
