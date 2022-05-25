@@ -1,0 +1,13 @@
+extends layout
+
+block content 
+  div(ng-controller="ChatCtrl")
+    h1= title
+    p Bienvenido a #{title}.
+    P Por favor inserte la ID
+    input(type="text" id="contenedor")
+    p
+        button(id="buttona") Obtener sala
+  block scripts
+    script(src='/javascripts/angular/A_chat.js')
+    script(src="/javascripts/test.js")

@@ -4,8 +4,6 @@ var router = express.Router();
 const formidable = require('formidable');
 var mongoose = require("mongoose");
 
-
-
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Salas de chat' });
@@ -22,6 +20,9 @@ router.get('/chat/s:sala', function(req, res, next) {
   res.render('chat', { title: 'Sala '+sala, sala: sala });
 });
 
-
+/* GET home page. */
+router.get('/test', function(req, res, next) {
+  res.render('test', { title: 'Prueba Callbacks' });
+});
 
 module.exports = router;

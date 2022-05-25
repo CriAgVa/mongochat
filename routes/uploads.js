@@ -93,11 +93,6 @@ router.post('/msg', function(req, res){
     });
 });
 
-/**
- * 
-
- * 
- */
 router.get('/download/:id', function(req, res){
     Archivo.findOne({nombreOriginal : req.params.id},
         function(err, reslt){

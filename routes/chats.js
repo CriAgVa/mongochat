@@ -17,6 +17,17 @@ router.get("/", function(req, res){
         });
 });
 
+router.get("/id:id", function(req, res){
+    Chat.findOne({ _id : req.params.id},{sala:1, _id:0})
+        .exec( function (error , resultado ){
+            if ( error === null ){
+               res.json( resultado );
+            }else{
+               res.json( { status: false , error : error } );
+            }
+        });
+});
+
 router.get("/s:sala", function(req, res){
     Chat.find({sala:req.params.sala})
         .sort({sala:1})
